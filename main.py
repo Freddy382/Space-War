@@ -1,6 +1,7 @@
 import pygame
 import random
 import sys
+import json
 
 class BULLET():
     def __init__(self, width, height, bullet_width, bullet_height):
@@ -16,7 +17,7 @@ class BULLET():
         pygame.draw.rect(screen, BLUE, self.rect)
 
     def move_bullet(self):
-        self.rect.x -= 8
+        self.rect.x -= game_state.spawning_speed
 
 class PLAYER():
 
@@ -136,6 +137,11 @@ class GAMESTATE():
         self.state = "intro"
         self.font = pygame.font.Font("./assets/pixel.ttf", 25)
 
+        self.difficulty = "MEDIUM"
+        self.spawning_speed = 8
+
+        self.difficulty_text = self.font.render("EASY", True, WHITE)
+
     def intro(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -143,12 +149,49 @@ class GAMESTATE():
                 sys.exit()
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                self.state = "main_game"
+
+                if width / 2 - self.difficulty_text.get_width() <= mouse_pos[0] and height / 2 + 100 <= mouse_pos[  1] and width / 2 + self.difficulty_text.get_width() / 2 >= mouse_pos[0] and mouse_pos[1] <= height / 2 + 100 + self.difficulty_text.get_height() / 2:
+
+                    if self.difficulty == "MEDIUM":
+                        self.difficulty = "HARD"
+                        self.spawning_speed = 10
+
+                    elif self.difficulty == "HARD":
+                        self.difficulty = "EASY"
+                        self.spawning_speed = 5
+
+                    else:
+                        self.difficulty = "MEDIUM"
+                        self.spawning_speed = 8
+
+                else:
+                    self.state = "main_game"
 
         screen.blit(BG, (0, 0))
 
-        start_info = self.font.render("SPACE WAR", True, WHITE)
-        screen.blit(start_info, (width / 2 - start_info.get_rect().width / 2, height / 2))
+        if width / 2 - self.difficulty_text.get_width() <= mouse_pos[0] and height / 2 + 100 <= mouse_pos[1] and width / 2 + self.difficulty_text.get_width() / 2 >= mouse_pos[0] and mouse_pos[1] <= height / 2 + 100 + self.difficulty_text.get_height() / 2:
+            self.difficulty_text = self.font.render(self.difficulty, True, BLUE)
+
+        else:
+            self.difficulty_text = self.font.render(self.difficulty, True, WHITE)
+
+        screen.blit(self.difficulty_text, (width / 2 - self.difficulty_text.get_width() / 2, height / 2 + 100))
+
+        space_font = pygame.font.Font("./assets/pixel.ttf", 40)
+        start_info = space_font.render("SPACE WAR", True, WHITE)
+        screen.blit(start_info, (width / 2 - start_info.get_rect().width / 2, height / 2 - 40))
+
+        with open("highscore.json", "r") as f:
+            data = json.load(f)
+
+        high_font = pygame.font.Font("./assets/pixel.ttf", 15)
+        highscore = data["highscore"]
+
+        highscore_text = high_font.render(f"HIGHSCORE: {highscore}", True, WHITE)
+        screen.blit(highscore_text, (width / 2 - start_info.get_rect().width / 2 + 45, height / 2 + 20))
+
+        screen.blit(main.player.small_image, (width / 2 - main.player.small_image.get_rect().width / 2 - 180, height / 2))
+        screen.blit(main.player.small_image, (width / 2 - main.player.small_image.get_rect().width / 2 + 180, height / 2))
 
     def main_game(self):
         for event in pygame.event.get():
@@ -219,6 +262,7 @@ WHITE = (255, 255, 255)
 FPS = 60
 vel = 10
 
+
 clock = pygame.time.Clock()
 
 bullet = BULLET(width, height, 20, 10)
@@ -234,6 +278,8 @@ run = True
 while run:
 
     #pygame.time.delay(100)
+
+    mouse_pos = pygame.mouse.get_pos()
 
     game_state.state_manager()
 
