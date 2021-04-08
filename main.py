@@ -14,7 +14,7 @@ class BULLET():
         self.rect = pygame.Rect(self.x_pos, self.y_pos, self.bullet_width, self.bullet_height)
 
     def draw_bullet(self):
-        pygame.draw.rect(screen, BLUE, self.rect)
+        pygame.draw.rect(screen, GREEN, self.rect)
 
     def move_bullet(self, spawn_speed):
         self.rect.x -= spawn_speed
@@ -51,7 +51,7 @@ class MAIN():
         self.player = PLAYER(width, height, 50, 50)
         self.bullet_counter = 0
 
-        self.lives = 3
+        self.lives = 10
         self.font = pygame.font.Font("./assets/pixel.ttf", 25)
         self.x = 0
 
@@ -60,8 +60,10 @@ class MAIN():
 
         self.highscore = int
 
-        self.tick_counter = 0
+        self.frames_counter = 0
         self.score = 0
+
+        self.spawn_speed = 30
 
         self.bullets = {}
 
@@ -74,11 +76,13 @@ class MAIN():
         self.draw_font()
         self.on_bullet_collision()
         self.change_counter()
+        self.change_spawn_rate()
         self.is_colliding()
         self.update_highscore()
 
-        if self.tick_counter % 30 == 0:
-            self.create_bullets()
+        if self.frames_counter >= 1:
+            if self.frames_counter % int(self.spawn_speed) == 0:
+                self.create_bullets()
 
     def move_background(self):
         rel_x = self.x % BG.get_rect().width
@@ -88,12 +92,12 @@ class MAIN():
         self.x -= 10
 
     def create_bullets(self):
-        self.bullets[self.bullet_counter] = BULLET(width, height, 20, 10)
+        self.bullets[self.bullet_counter] = BULLET(width, height, 20, 5)
         self.bullet_counter += 1
 
     def draw_bullet_objects(self):
         for bullet_object in self.bullets.values():
-            pygame.draw.rect(screen, RED, bullet_object.rect)
+            bullet_object.draw_bullet()
 
     def draw_font(self):
         lives = self.font.render(f"LIVES: {self.lives}", False, WHITE)
@@ -128,9 +132,13 @@ class MAIN():
             return True
 
     def change_counter(self):
-        self.tick_counter += 1
-        if self.tick_counter % FPS == 0:
+        self.frames_counter += 1
+        if self.frames_counter % FPS == 0:
             self.score += 1
+
+    def change_spawn_rate(self):
+        if self.frames_counter % 120 == 0 and self.spawn_speed >= 5:
+            self.spawn_speed -= 1
 
     def update_highscore(self):
         if self.game_over():
@@ -148,7 +156,8 @@ class MAIN():
         self.bullets.clear()
         self.x = 0
         self.score = 0
-        self.tick_counter = 0
+        self.frames_counter = 0
+        self.spawn_speed = 30
 
 class GAMESTATE():
     def __init__(self):
@@ -228,8 +237,6 @@ class GAMESTATE():
         elif keys[pygame.K_DOWN] and main.player.rect.y <= height - main.player.player_height:
             main.player.rect.y += main.player.velocity
 
-        pygame.time.set_timer(keys[pygame.K_v], 0)
-
         main.game_manager()
 
         if main.game_over():
@@ -270,6 +277,7 @@ BG = pygame.image.load("./assets/BG.png")
 ICON = pygame.image.load("./assets/player.png")
 
 RED = (255, 0, 0)
+GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 WHITE = (255, 255, 255)
 
