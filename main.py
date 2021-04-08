@@ -20,7 +20,6 @@ class BULLET():
         self.rect.x -= spawn_speed
 
 class PLAYER():
-
     def __init__(self, width, height, player_width, player_height):
         self.width = width
         self.height = height
