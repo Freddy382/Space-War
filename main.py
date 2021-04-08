@@ -16,8 +16,8 @@ class BULLET():
     def draw_bullet(self):
         pygame.draw.rect(screen, BLUE, self.rect)
 
-    def move_bullet(self):
-        self.rect.x -= game_state.spawning_speed
+    def move_bullet(self, spawn_speed):
+        self.rect.x -= spawn_speed
 
 class PLAYER():
 
@@ -41,6 +41,8 @@ class PLAYER():
         self.rect.x = self.width / 2 - 25
         self.rect.y = self.height / 2 - 25
 
+        self.velocity = 10
+
     def draw_player(self):
         screen.blit(self.rotated, self.rect)
 
@@ -53,8 +55,13 @@ class MAIN():
         self.font = pygame.font.Font("./assets/pixel.ttf", 25)
         self.x = 0
 
+        self.bullet_velocity = 5
+        self.difficulty = "MEDIUM"
+
+        self.highscore = int
+
         self.tick_counter = 0
-        self.seconds = 0
+        self.score = 0
 
         self.bullets = {}
 
@@ -68,6 +75,7 @@ class MAIN():
         self.on_bullet_collision()
         self.change_counter()
         self.is_colliding()
+        self.update_highscore()
 
         if self.tick_counter % 30 == 0:
             self.create_bullets()
@@ -88,15 +96,15 @@ class MAIN():
             pygame.draw.rect(screen, RED, bullet_object.rect)
 
     def draw_font(self):
-        lives = self.font.render(f"Lives: {self.lives}", False, WHITE)
+        lives = self.font.render(f"LIVES: {self.lives}", False, WHITE)
         screen.blit(lives, (0, 0))
 
-        seconds = self.font.render(f"Seconds: {self.seconds}", False, WHITE)
+        seconds = self.font.render(f"SCORE: {self.score}", False, WHITE)
         screen.blit(seconds, (width - seconds.get_rect().width, 0))
 
     def move_bullet_objects(self):
         for bullet_object in self.bullets.values():
-            bullet_object.move_bullet()
+            bullet_object.move_bullet(self.bullet_velocity)
 
     def remove_bullets(self):
         for key, value in list(self.bullets.items()):
@@ -122,23 +130,30 @@ class MAIN():
     def change_counter(self):
         self.tick_counter += 1
         if self.tick_counter % FPS == 0:
-            self.seconds += 1
+            self.score += 1
+
+    def update_highscore(self):
+        if self.game_over():
+            if self.score >= int(self.highscore):
+                with open("highscore.json", "r") as f:
+                    data = json.load(f)
+                    data["highscore"] = self.score
+
+                with open("highscore.json", "w") as f:
+                    json.dump(data, f, indent=4)
 
     def reset(self):
         self.lives = 3
         self.bullet_counter = 0
         self.bullets.clear()
         self.x = 0
-        self.seconds = 0
+        self.score = 0
         self.tick_counter = 0
 
 class GAMESTATE():
     def __init__(self):
         self.state = "intro"
         self.font = pygame.font.Font("./assets/pixel.ttf", 25)
-
-        self.difficulty = "MEDIUM"
-        self.spawning_speed = 8
 
         self.difficulty_text = self.font.render("EASY", True, WHITE)
 
@@ -149,20 +164,19 @@ class GAMESTATE():
                 sys.exit()
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
-
                 if width / 2 - self.difficulty_text.get_width() <= mouse_pos[0] and height / 2 + 100 <= mouse_pos[  1] and width / 2 + self.difficulty_text.get_width() / 2 >= mouse_pos[0] and mouse_pos[1] <= height / 2 + 100 + self.difficulty_text.get_height() / 2:
 
-                    if self.difficulty == "MEDIUM":
-                        self.difficulty = "HARD"
-                        self.spawning_speed = 10
+                    if main.difficulty == "MEDIUM":
+                        main.difficulty = "HARD"
+                        main.bullet_velocity = 12
 
-                    elif self.difficulty == "HARD":
-                        self.difficulty = "EASY"
-                        self.spawning_speed = 5
+                    elif main.difficulty == "HARD":
+                        main.difficulty = "EASY"
+                        main.bullet_velocity = 5
 
                     else:
-                        self.difficulty = "MEDIUM"
-                        self.spawning_speed = 8
+                        main.difficulty = "MEDIUM"
+                        main.bullet_velocity = 8
 
                 else:
                     self.state = "main_game"
@@ -170,10 +184,10 @@ class GAMESTATE():
         screen.blit(BG, (0, 0))
 
         if width / 2 - self.difficulty_text.get_width() <= mouse_pos[0] and height / 2 + 100 <= mouse_pos[1] and width / 2 + self.difficulty_text.get_width() / 2 >= mouse_pos[0] and mouse_pos[1] <= height / 2 + 100 + self.difficulty_text.get_height() / 2:
-            self.difficulty_text = self.font.render(self.difficulty, True, BLUE)
+            self.difficulty_text = self.font.render(main.difficulty, True, BLUE)
 
         else:
-            self.difficulty_text = self.font.render(self.difficulty, True, WHITE)
+            self.difficulty_text = self.font.render(main.difficulty, True, WHITE)
 
         screen.blit(self.difficulty_text, (width / 2 - self.difficulty_text.get_width() / 2, height / 2 + 100))
 
@@ -184,14 +198,14 @@ class GAMESTATE():
         with open("highscore.json", "r") as f:
             data = json.load(f)
 
-        high_font = pygame.font.Font("./assets/pixel.ttf", 15)
-        highscore = data["highscore"]
+            highscore_font = pygame.font.Font("./assets/pixel.ttf", 15)
+            main.highscore = data["highscore"]
 
-        highscore_text = high_font.render(f"HIGHSCORE: {highscore}", True, WHITE)
-        screen.blit(highscore_text, (width / 2 - start_info.get_rect().width / 2 + 45, height / 2 + 20))
+            highscore_text = highscore_font.render(f"HIGHSCORE: {main.highscore}", True, WHITE)
+            screen.blit(highscore_text, (width / 2 - start_info.get_rect().width / 2 + 45, height / 2 + 20))
 
-        screen.blit(main.player.small_image, (width / 2 - main.player.small_image.get_rect().width / 2 - 180, height / 2))
-        screen.blit(main.player.small_image, (width / 2 - main.player.small_image.get_rect().width / 2 + 180, height / 2))
+            screen.blit(main.player.small_image, (width / 2 - main.player.small_image.get_rect().width / 2 - 180, height / 2))
+            screen.blit(main.player.small_image, (width / 2 - main.player.small_image.get_rect().width / 2 + 180, height / 2))
 
     def main_game(self):
         for event in pygame.event.get():
@@ -203,16 +217,16 @@ class GAMESTATE():
 
         if keys[pygame.K_LEFT] and main.player.rect.x >= 0:
 
-            main.player.rect.x -= vel
+            main.player.rect.x -= main.player.velocity
 
         elif keys[pygame.K_RIGHT] and main.player.rect.x <= width - main.player.player_width:
-            main.player.rect.x += vel
+            main.player.rect.x += main.player.velocity
 
         elif keys[pygame.K_UP] and main.player.rect.y >= 0:
-            main.player.rect.y -= vel
+            main.player.rect.y -= main.player.velocity
 
         elif keys[pygame.K_DOWN] and main.player.rect.y <= height - main.player.player_height:
-            main.player.rect.y += vel
+            main.player.rect.y += main.player.velocity
 
         pygame.time.set_timer(keys[pygame.K_v], 0)
 
@@ -229,7 +243,7 @@ class GAMESTATE():
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 main.reset()
-                self.state = "main_game"
+                self.state = "intro"
 
         screen.blit(BG, (0, 0))
 
@@ -260,8 +274,6 @@ BLUE = (0, 0, 255)
 WHITE = (255, 255, 255)
 
 FPS = 60
-vel = 10
-
 
 clock = pygame.time.Clock()
 
@@ -276,8 +288,6 @@ pygame.display.set_icon(ICON)
 run = True
 
 while run:
-
-    #pygame.time.delay(100)
 
     mouse_pos = pygame.mouse.get_pos()
 
