@@ -2,6 +2,7 @@ import pygame
 import random
 import sys
 import json
+import numpy
 
 class BULLET():
     def __init__(self, width, height, bullet_width, bullet_height):
@@ -40,19 +41,22 @@ class PLAYER():
         self.rect.x = self.width / 2 - 25
         self.rect.y = self.height / 2 - 25
 
-        self.velocity = 10
+        self.velocity = 5
 
     def draw_player(self):
-        screen.blit(self.rotated, self.rect)
+        screen.blit(self.rotated, (self.rect.x, self.rect.y))
 
 class MAIN():
     def __init__(self):
         self.player = PLAYER(width, height, 50, 50)
         self.bullet_counter = 0
 
-        self.lives = 10
+        self.lives = 3
         self.font = pygame.font.Font("./assets/pixel.ttf", 25)
         self.x = 0
+
+        self.lives_color = WHITE
+        self.lives_reset_timer = 0
 
         self.bullet_velocity = 5
         self.difficulty = "MEDIUM"
@@ -80,7 +84,7 @@ class MAIN():
         self.update_highscore()
 
         if self.frames_counter >= 1:
-            if self.frames_counter % int(self.spawn_speed) == 0:
+            if self.frames_counter % self.spawn_speed == 0:
                 self.create_bullets()
 
     def move_background(self):
@@ -99,7 +103,7 @@ class MAIN():
             bullet_object.draw_bullet()
 
     def draw_font(self):
-        lives = self.font.render(f"LIVES: {self.lives}", False, WHITE)
+        lives = self.font.render(f"LIVES: {self.lives}", False, self.lives_color)
         screen.blit(lives, (0, 0))
 
         seconds = self.font.render(f"SCORE: {self.score}", False, WHITE)
@@ -121,8 +125,17 @@ class MAIN():
                 return True
 
     def on_bullet_collision(self):
+        self.lives_reset_timer += 1
+
         if self.is_colliding():
+
+            self.lives_reset_timer = 0
             self.lives -= 1
+            self.lives_color = RED
+        else:
+            if self.lives_reset_timer % 60 == 0:
+                self.lives_color = WHITE
+                self.lives_reset_timer = 0
 
     def game_over(self):
         if not self.lives == 0:
@@ -163,7 +176,7 @@ class GAMESTATE():
         self.state = "intro"
         self.font = pygame.font.Font("./assets/pixel.ttf", 25)
 
-        self.difficulty_text = self.font.render("EASY", True, WHITE)
+        self.difficulty_text = self.font.render("MEDIUM", True, WHITE)
 
     def intro(self):
         for event in pygame.event.get():
@@ -224,7 +237,6 @@ class GAMESTATE():
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_LEFT] and main.player.rect.x >= 0:
-
             main.player.rect.x -= main.player.velocity
 
         elif keys[pygame.K_RIGHT] and main.player.rect.x <= width - main.player.player_width:
@@ -283,8 +295,6 @@ WHITE = (255, 255, 255)
 FPS = 60
 
 clock = pygame.time.Clock()
-
-bullet = BULLET(width, height, 20, 10)
 
 main = MAIN()
 game_state = GAMESTATE()
