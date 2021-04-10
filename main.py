@@ -4,6 +4,32 @@ import sys
 import json
 import numpy
 
+class PARTICLES():
+    def __init__(self):
+        self.particles = []
+
+    def emit(self):
+        if self.particles:
+            self.delete_particles()
+            for particle in self.particles:
+                particle[0][0] += particle[2]
+                particle[1] -= 0.2
+                pygame.draw.circle(screen, RED, particle[0], int(particle[1]))
+
+    def add_particles(self):
+        pos_x = main.player.rect.x - 5
+        pos_y = main.player.rect.y + main.player.player_height / 2
+        radius = 8
+        direction_x = -3
+
+        particle_circle = [[pos_x, pos_y], radius, direction_x]
+
+        self.particles.append(particle_circle)
+
+    def delete_particles(self):
+        particle_copy = [particle for particle in self.particles if particle[1] > 0 and particle[0][0] <= main.player.rect.x]
+        self.particles = particle_copy
+
 class BULLET():
     def __init__(self, width, height, bullet_width, bullet_height):
         self.x_pos = width
@@ -49,6 +75,8 @@ class PLAYER():
 class MAIN():
     def __init__(self):
         self.player = PLAYER(width, height, 50, 50)
+        self.particles = PARTICLES()
+
         self.bullet_counter = 0
 
         self.lives = 3
@@ -82,6 +110,8 @@ class MAIN():
         self.on_bullet_collision()
         self.is_colliding()
         self.update_highscore()
+
+        self.particles.emit()
 
     def move_background(self):
         rel_x = self.x % BG.get_rect().width
@@ -149,7 +179,6 @@ class MAIN():
     def change_spawn_rate(self):
         if self.spawn_rate >= 11:
             self.spawn_rate -= 5
-            print(self.spawn_rate)
 
     def update_highscore(self):
         if self.game_over():
@@ -238,6 +267,9 @@ class GAMESTATE():
             elif event.type == spawn_rate_increase_event:
                 main.change_spawn_rate()
 
+            elif event.type == particle_spawn_event:
+                main.particles.add_particles()
+
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_LEFT] and main.player.rect.x >= 0:
@@ -307,11 +339,14 @@ main = MAIN()
 game_state = GAMESTATE()
 
 
-counter_increase_event = pygame.USEREVENT + 2
+counter_increase_event = pygame.USEREVENT + 1
 pygame.time.set_timer(counter_increase_event, 1000)
 
-spawn_rate_increase_event = pygame.USEREVENT + 3
+spawn_rate_increase_event = pygame.USEREVENT + 2
 pygame.time.set_timer(spawn_rate_increase_event, 10000)
+
+particle_spawn_event = pygame.USEREVENT + 3
+pygame.time.set_timer(particle_spawn_event, 50)
 
 while True:
 
