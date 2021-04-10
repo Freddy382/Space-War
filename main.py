@@ -12,17 +12,20 @@ class PARTICLES():
         if self.particles:
             self.delete_particles()
             for particle in self.particles:
-                particle[0][0] += particle[2]
+                particle[0][0] += particle[2][0]
+                particle[0][1] += particle[2][1]
                 particle[1] -= 0.2
-                pygame.draw.circle(screen, RED, particle[0], int(particle[1]))
+                pygame.draw.circle(screen, particle[3], particle[0], int(particle[1]))
 
     def add_particles(self):
         pos_x = main.player.rect.x - 5
-        pos_y = main.player.rect.y + main.player.player_height / 2
-        radius = 8
+        pos_y = random.randint(main.player.rect.y, main.player.rect.y + main.player.player_height)
+        radius = 5
         direction_x = -3
+        direction_y = random.randint(-1, 1)
+        color = random.choice([RED, ORANGE])
 
-        particle_circle = [[pos_x, pos_y], radius, direction_x]
+        particle_circle = [[pos_x, pos_y], radius, [direction_x, direction_y], color]
 
         self.particles.append(particle_circle)
 
@@ -330,6 +333,8 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 WHITE = (255, 255, 255)
+YELLOW = (255, 255, 0)
+ORANGE = (255, 165, 0)
 
 FPS = 60
 
@@ -337,7 +342,6 @@ clock = pygame.time.Clock()
 
 main = MAIN()
 game_state = GAMESTATE()
-
 
 counter_increase_event = pygame.USEREVENT + 1
 pygame.time.set_timer(counter_increase_event, 1000)
