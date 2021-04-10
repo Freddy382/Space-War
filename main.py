@@ -206,6 +206,8 @@ class GAMESTATE():
         self.state = "intro"
         self.font = pygame.font.Font("./assets/pixel.ttf", 25)
 
+        self.sound = pygame.mixer.Sound("./assets/click.mp3")
+
         self.difficulty_text = self.font.render("MEDIUM", True, WHITE)
 
     def intro(self):
@@ -231,6 +233,8 @@ class GAMESTATE():
 
                 else:
                     self.state = "main_game"
+
+                self.sound.play()
 
         screen.blit(BG, (0, 0))
 
@@ -337,6 +341,7 @@ YELLOW = (255, 255, 0)
 ORANGE = (255, 165, 0)
 
 FPS = 60
+
 
 clock = pygame.time.Clock()
 
