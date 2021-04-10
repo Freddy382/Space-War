@@ -64,9 +64,9 @@ class MAIN():
         self.highscore = int
 
         self.frames_counter = 0
-        self.score = 0
+        self.spawn_rate = 50
 
-        self.spawn_speed = 30
+        self.score = 0
 
         self.bullets = {}
 
@@ -76,16 +76,12 @@ class MAIN():
         self.move_bullet_objects()
         self.player.draw_player()
         self.remove_bullets()
+        self.change_frames_counter()
+        self.create_bullets()
         self.draw_font()
         self.on_bullet_collision()
-        self.change_counter()
-        self.change_spawn_rate()
         self.is_colliding()
         self.update_highscore()
-
-        if self.frames_counter >= 1:
-            if self.frames_counter % self.spawn_speed == 0:
-                self.create_bullets()
 
     def move_background(self):
         rel_x = self.x % BG.get_rect().width
@@ -95,8 +91,10 @@ class MAIN():
         self.x -= 10
 
     def create_bullets(self):
-        self.bullets[self.bullet_counter] = BULLET(width, height, 20, 5)
-        self.bullet_counter += 1
+        if self.frames_counter % self.spawn_rate == 0:
+            self.bullets[self.bullet_counter] = BULLET(width, height, 20, 5)
+            self.bullet_counter += 1
+            self.frames_counter = 0
 
     def draw_bullet_objects(self):
         for bullet_object in self.bullets.values():
@@ -128,7 +126,6 @@ class MAIN():
         self.lives_reset_timer += 1
 
         if self.is_colliding():
-
             self.lives_reset_timer = 0
             self.lives -= 1
             self.lives_color = RED
@@ -144,13 +141,15 @@ class MAIN():
             return True
 
     def change_counter(self):
+         self.score += 1
+
+    def change_frames_counter(self):
         self.frames_counter += 1
-        if self.frames_counter % FPS == 0:
-            self.score += 1
 
     def change_spawn_rate(self):
-        if self.frames_counter % 120 == 0 and self.spawn_speed >= 5:
-            self.spawn_speed -= 1
+        if self.spawn_rate >= 11:
+            self.spawn_rate -= 5
+            print(self.spawn_rate)
 
     def update_highscore(self):
         if self.game_over():
@@ -168,8 +167,7 @@ class MAIN():
         self.bullets.clear()
         self.x = 0
         self.score = 0
-        self.frames_counter = 0
-        self.spawn_speed = 30
+        self.spawn_rate = 50
 
 class GAMESTATE():
     def __init__(self):
@@ -234,6 +232,12 @@ class GAMESTATE():
                 pygame.quit()
                 sys.exit()
 
+            elif event.type == counter_increase_event:
+                main.change_counter()
+
+            elif event.type == spawn_rate_increase_event:
+                main.change_spawn_rate()
+
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_LEFT] and main.player.rect.x >= 0:
@@ -287,6 +291,9 @@ screen = pygame.display.set_mode([width, height])
 BG = pygame.image.load("./assets/BG.png")
 ICON = pygame.image.load("./assets/player.png")
 
+pygame.display.set_caption("Space War")
+pygame.display.set_icon(ICON)
+
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
@@ -299,12 +306,14 @@ clock = pygame.time.Clock()
 main = MAIN()
 game_state = GAMESTATE()
 
-pygame.display.set_caption("Space War")
-pygame.display.set_icon(ICON)
 
-run = True
+counter_increase_event = pygame.USEREVENT + 2
+pygame.time.set_timer(counter_increase_event, 1000)
 
-while run:
+spawn_rate_increase_event = pygame.USEREVENT + 3
+pygame.time.set_timer(spawn_rate_increase_event, 10000)
+
+while True:
 
     mouse_pos = pygame.mouse.get_pos()
 
