@@ -92,12 +92,16 @@ class MAIN():
         self.bullet_velocity = 5
         self.difficulty = "MEDIUM"
 
+        self.music = True
+
         self.highscore = int
 
         self.frames_counter = 0
         self.spawn_rate = 50
 
         self.score = 0
+
+        self.sound = pygame.mixer.Sound("./assets/laser.mp3")
 
         self.bullets = {}
 
@@ -162,6 +166,10 @@ class MAIN():
             self.lives_reset_timer = 0
             self.lives -= 1
             self.lives_color = RED
+
+            if self.music:
+                self.sound.play()
+
         else:
             if self.lives_reset_timer % 60 == 0:
                 self.lives_color = WHITE
@@ -204,11 +212,14 @@ class MAIN():
 class GAMESTATE():
     def __init__(self):
         self.state = "intro"
-        self.font = pygame.font.Font("./assets/pixel.ttf", 25)
+
+        self.big_font = pygame.font.Font("./assets/pixel.ttf", 25)
+        self.small_font = pygame.font.Font("./assets/pixel.ttf", 15)
 
         self.sound = pygame.mixer.Sound("./assets/click.mp3")
 
-        self.difficulty_text = self.font.render("MEDIUM", True, WHITE)
+        self.difficulty_text = self.big_font.render("MEDIUM", True, WHITE)
+        self.music_text = self.small_font.render("SOUND ON", True, WHITE)
 
     def intro(self):
         for event in pygame.event.get():
@@ -217,7 +228,7 @@ class GAMESTATE():
                 sys.exit()
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if width / 2 - self.difficulty_text.get_width() <= mouse_pos[0] and height / 2 + 100 <= mouse_pos[  1] and width / 2 + self.difficulty_text.get_width() / 2 >= mouse_pos[0] and mouse_pos[1] <= height / 2 + 100 + self.difficulty_text.get_height() / 2:
+                if width / 2 - self.difficulty_text.get_width() <= mouse_pos[0] and height / 2 + 100 <= mouse_pos[1] and width / 2 + self.difficulty_text.get_width() / 2 >= mouse_pos[0] and mouse_pos[1] <= height / 2 + 100 + self.difficulty_text.get_height() / 2:
 
                     if main.difficulty == "MEDIUM":
                         main.difficulty = "HARD"
@@ -231,29 +242,54 @@ class GAMESTATE():
                         main.difficulty = "MEDIUM"
                         main.bullet_velocity = 8
 
+                elif width - 20 - self.music_text.get_width() <= mouse_pos[0] and height - 20 - self.music_text.get_height() <= mouse_pos[1]:
+                    if not main.music:
+                        main.music = True
+                    else:
+                        main.music = False
+
+                    if main.music:
+                        self.music_text = self.small_font.render("SOUND: ON", True, WHITE)
+
+                    else:
+                        self.music_text = self.small_font.render("SOUND: OFF", True, WHITE)
+
                 else:
                     self.state = "main_game"
 
-                self.sound.play()
+                if main.music:
+                    self.sound.play()
 
         screen.blit(BG, (0, 0))
 
         if width / 2 - self.difficulty_text.get_width() <= mouse_pos[0] and height / 2 + 100 <= mouse_pos[1] and width / 2 + self.difficulty_text.get_width() / 2 >= mouse_pos[0] and mouse_pos[1] <= height / 2 + 100 + self.difficulty_text.get_height() / 2:
-            self.difficulty_text = self.font.render(main.difficulty, True, BLUE)
-
+            self.difficulty_text = self.big_font.render(main.difficulty, True, BLUE)
         else:
-            self.difficulty_text = self.font.render(main.difficulty, True, WHITE)
+            self.difficulty_text = self.big_font.render(main.difficulty, True, WHITE)
 
-        screen.blit(self.difficulty_text, (width / 2 - self.difficulty_text.get_width() / 2, height / 2 + 100))
+        if width - 20 - self.music_text.get_width() <= mouse_pos[0] and height - 20 - self.music_text.get_height() <= mouse_pos[1]:
+            if main.music:
+                self.music_text = self.small_font.render("SOUND: ON", True, BLUE)
+            else:
+                self.music_text = self.small_font.render("SOUND: OFF", True, BLUE)
+        else:
+            if main.music:
+                self.music_text = self.small_font.render("SOUND: ON", True, WHITE)
+            else:
+                self.music_text = self.small_font.render("SOUND: OFF", True, WHITE)
+
 
         space_font = pygame.font.Font("./assets/pixel.ttf", 40)
         start_info = space_font.render("SPACE WAR", True, WHITE)
+
+        screen.blit(self.difficulty_text, (width / 2 - self.difficulty_text.get_width() / 2, height / 2 + 100))
+        screen.blit(self.music_text, (width - self.music_text.get_width() - 20, height - self.music_text.get_height() - 20))
         screen.blit(start_info, (width / 2 - start_info.get_rect().width / 2, height / 2 - 40))
 
         with open("highscore.json", "r") as f:
             data = json.load(f)
 
-            highscore_font = pygame.font.Font("./assets/pixel.ttf", 15)
+            highscore_font = self.small_font
             main.highscore = data["highscore"]
 
             highscore_text = highscore_font.render(f"HIGHSCORE: {main.highscore}", True, WHITE)
@@ -305,11 +341,16 @@ class GAMESTATE():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 main.reset()
                 self.state = "intro"
+                if main.music:
+                    self.sound.play()
 
         screen.blit(BG, (0, 0))
 
-        font_text = self.font.render("GAME OVER", True, WHITE)
-        screen.blit(font_text, (width / 2 - 65, height / 2 - 10))
+        end_font_text = self.big_font.render("GAME OVER", True, WHITE)
+        score_text = self.small_font.render(f"YOUR SCORE: {main.score}", True, WHITE)
+
+        screen.blit(end_font_text, (width / 2 - 65, height / 2 - 10))
+        screen.blit(score_text, (width / 2 - 55, height / 2 + 50))
 
     def state_manager(self):
         if self.state == "intro":
